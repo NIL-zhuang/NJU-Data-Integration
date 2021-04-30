@@ -4,7 +4,8 @@ import pandas as pd
 from tqdm import tqdm
 import os
 
-class Category2Session:
+
+class Category2Specific:
     def __init__(self, source, target):
         self.source = source
         self.target = target
@@ -20,8 +21,9 @@ class Category2Session:
             df = pd.read_csv(os.path.join(self.source, filename), encoding='utf-8', header=0)
             df = df.sort_values(by=value)
             df.to_csv(os.path.join(self.target, filename),
-                         index=False, mode="w")
+                      index=False, mode="w")
+
 
 if __name__ == '__main__':
-    t = Category2Session("../category", "../userId")
+    t = Category2Specific("../category", "../userId")
     t.run("userId")
