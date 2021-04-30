@@ -121,11 +121,17 @@ create table buy_data
 5. 静态数据需要的物化表
    1. 用户物化表(用户id，秒杀成功次数，秒杀次数，正常购买次数，平均购买前同一类别商品浏览次数，平均购买前浏览次数，平均购买前浏览时间，cart次数、favor次数，cart后购买次数、favor后购买次数、不同时间段的登录频率、成功登录IP地址数量)
    2. SESSIONID物化表(SESSIONID，用户id，getDetail次数，favor次数，cart次数，buy次数，login次数)
+6. <a href = "https://box.nju.edu.cn/d/8ca4d3496b94418dba42/">中间数据下载</a>
+   1. format：从txt调整为csv格式的数据
+   2. category：将csv格式的数据转换为按照category进行划分。
+   3. session：将category的数据按照session_id进行排序的结果。
+   4. userId：将category的数据按照user_id进行排序的结果。
 
 ## 4.2. 静态数据
 1. 数据清洗
-   1. 清洗掉所有在流数据被识别为机器人的相关数据。
+   1. 清洗掉所有在流数据被识别为机器人的相关数据
    2. 根据userId进行划分分类统计
+   3. 静态数据的时间戳和流数据的时间是一致的
 2. 数据处理，KPI：购买转化、用户留存等
    1. 将静态数据和流数据结合，对每个用户按照流数据中的请求类型进行划分
    2. 对每个用户的所有login, cart, getDetail, favor, buy等操作，按照time，Category为主维度，getDetail/buy, cart/buy, favor/buy, buy等多种频数或频度，给用户打上tag，对每一个用户进行多维度的分析。以购买行为转化率作为KPI，我们可以获得
@@ -139,6 +145,11 @@ create table buy_data
    2. 按照用户的不同维度信息，进行聚类分析，划分类群
    3. 对全局和不同类群中的用户分别统计，获得用户属性和偏好分布
    4. 获取到用户的购买偏好、下单次数、频数、浏览时间倾向
+4. 其他可供参考的思路
+   1. 基于区段的机器人流量的分段分析
+   2. 捆绑销售(部分商品可以进行捆绑销售，使用KNN或者aprioir算法)
+   3. 用户画像(为每一个用户绘制特定的用户画像)
+   4. 分析商品的复购率和热门产品
 
 # 5. 数据可视化
 1. Superset

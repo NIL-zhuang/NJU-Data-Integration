@@ -33,6 +33,7 @@ class Format2Category:
 
     def run(self):
         self.clear()
+        first = True
         for filename in tqdm(os.listdir(self.source)):
             if not filename.endswith("csv"):
                 continue
@@ -44,10 +45,15 @@ class Format2Category:
                     t[column] = t["REQUEST_BODY"].map(lambda s: json.loads(s)[column] if column in s else 0)
                 target_column = t.columns.values.tolist()
                 target_column.remove("REQUEST_BODY")
-                if(category!="/user/login"):
+                if category != "/user/login":
                     target_column.remove("IPADDR")
-                t.to_csv(self.get_output_file_name(category),
-                         index=False, columns=target_column, mode="a+")
+                if first:
+                    t.to_csv(self.get_output_file_name(category),
+                             index=False, columns=target_column, mode="a+")
+                else:
+                    t.to_csv(self.get_output_file_name(category),
+                             index=False, columns=target_column, mode="a+", header=None)
+            first = False
 
 if __name__ == '__main__':
     m = Format2Category("../format", "../category")
