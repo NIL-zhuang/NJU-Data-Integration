@@ -132,3 +132,5 @@ dmypy.json
 Stream/format
 Stream/log
 Stream/category
+Stream/session
+Stream/userId
