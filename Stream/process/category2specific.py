@@ -25,5 +25,5 @@ class Category2Specific:
 
 
 if __name__ == '__main__':
-    t = Category2Specific("../category", "../userId")
-    t.run("userId")
+    t = Category2Specific("../category", "../sessionId")
+    t.run("SESSION_ID")

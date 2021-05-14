@@ -123,8 +123,8 @@ create table buy_data
    2. SESSIONID物化表(SESSIONID，用户id，getDetail次数，favor次数，cart次数，buy次数，login次数)
 6. <a href = "https://box.nju.edu.cn/d/8ca4d3496b94418dba42/">中间数据的下载地址</a>
    1. format：从txt调整为csv格式的数据
-   2. category：将csv格式的数据转换为按照category进行划分。
-   3. session：将category的数据按照session_id进行排序的结果。
+   2. category：将csv格]式的数据转换为按照category进行划分。
+   3. sessionId：将category的数据按照session_id进行排序的结果。
    4. userId：将category的数据按照user_id进行排序的结果。
    5. login：将category中的/user/login的请求按照ipaddr进行排序的结果。
 
