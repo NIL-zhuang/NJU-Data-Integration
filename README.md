@@ -127,9 +127,9 @@ create table buy_data
    2. category：将csv格]式的数据转换为按照category进行划分。
    3. sessionId：将category的数据按照session_id进行排序的结果。
    4. userId：将category的数据按照user_id进行排序的结果。
-   5. login：将category中的/user/login的请求按照ipaddr进行排序的结果。
+   5. login：找到的所有的撞库机器人，认为有问题的结果存放在_result为后缀的文件中
    6. grab：找到的所有的抢单机器人，认为有问题的结果存放在_result为后缀的文件中
-
+   
 ## 4.2. 静态数据
 1. 数据清洗
    1. 清洗掉所有在流数据被识别为机器人的相关数据
