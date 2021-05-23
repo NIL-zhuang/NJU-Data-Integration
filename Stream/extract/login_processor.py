@@ -124,8 +124,8 @@ class LoginProcessor:
     def run(self):
         self.analysis_ip()
         self.analysis_ip_userId()
-        self.draw_filter("../login/login_ipaddr_filter.csv")
-        self.draw_filter("../login/login_ipaddr_userid_filter.csv")
+        self.draw_filter("../result/login/login_ipaddr_filter.csv")
+        self.draw_filter("../result/login/login_ipaddr_userid_filter.csv")
 
 
 if __name__ == '__main__':
