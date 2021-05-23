@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import csv
-from tqdm import tqdm
+import pandas as pd
 
 class LoginProcessor:
     def __init__(self, source, target):
@@ -13,34 +12,65 @@ class LoginProcessor:
         if not os.path.exists(target):
             os.mkdir(target)
 
+    def group(self, query):
+        """
+        根据 query 进行 group by 后进行统计
+        :param filename: 绝对路径
+        :param query:
+        :return:
+        """
+        df = pd.read_csv(self.source, encoding='utf-8', header=0)
+        gb = df.groupby(query)
+        result = gb.size().to_frame(name="counts")
+        result = result \
+            .join(gb.agg({"success": "sum"}).rename(columns={"success": "successNumber"})) \
+            .reset_index()
+        filename = "login_" + "_".join(query).lower() + ".csv"
+        result.to_csv(os.path.join(self.target, filename), index=False, mode="w")
+
+    def filter(self, filename):
+        """
+        过滤掉100%成功的情况
+        :param filename:
+        :return:
+        """
+        df = pd.read_csv(filename, encoding='utf-8', header=0)
+        result = df[df["successNumber"] != df["counts"]]
+        filename = filename.replace(".csv", "_filter.csv")
+        result.to_csv(os.path.join(self.target, filename), index=False, mode="w")
+
+    def analysis(self, filename, query=["mean", 0.10]):
+        df = pd.read_csv(filename, encoding='utf-8', header=0)
+        df["success_rate"] = df["successNumber"] / df["counts"]
+        frame = df.describe()
+        print(frame)
+        # 登录次数次数少的先不考虑
+        result = df[df["counts"] >= frame["counts"][query[0]]]
+        frame = result.describe()
+        # 剔除成功率太高的
+        result = result[result["success_rate"] <= query[1]]
+        filename = filename.replace(".csv", "_result.csv")
+        result.to_csv(os.path.join(self.target, filename), index=False, mode="w")
+
+    def analysis_ip(self):
+        query = ["IPADDR"]
+        self.group(query)
+        filename = os.path.join(self.target, "login_" + "_".join(query).lower() + ".csv")
+        self.filter(filename)
+        filename = filename.replace(".csv", "_filter.csv")
+        self.analysis(filename)
+
+    def analysis_ip_userId(self):
+        query = ["IPADDR", "userId"]
+        self.group(query)
+        filename = os.path.join(self.target, "login_" + "_".join(query).lower() + ".csv")
+        self.filter(filename)
+        filename = filename.replace(".csv", "_filter.csv")
+        self.analysis(filename)
+
     def run(self):
-        data = {}
-        with open(self.source, "r", encoding="utf-8") as f:
-            reader = csv.reader(f)
-            first = True
-            for line in tqdm(reader):
-                if first:
-                    first = False
-                    continue
-                if(line[3] not in data):
-                    data[line[3]] = [line[3], 0, 0]
-                if eval(line[-1]) == 0:
-                    data[line[3]][1] += 1
-                else:
-                    data[line[3]][2] += 1
-
-        for key in data:
-            total = data[key][1] + data[key][2]
-            rate = data[key][1] / total * 1.0
-            data[key].append(rate)
-
-        with open(os.path.join(self.target, "ip_login.csv"), 'w', newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            for key in data:
-                if data[key][1] + data[key][2] < 5 or data[key][3] != 0.0:
-                    continue
-                writer.writerow(data[key])
+        self.analysis_ip_userId()
 
 if __name__ == '__main__':
-    lp = LoginProcessor("../login/userlogin_new.csv", "../login")
+    lp = LoginProcessor("../userId/userlogin_new.csv", "../login")
     lp.run()
