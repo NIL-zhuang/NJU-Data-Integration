@@ -3,9 +3,11 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# 指定默认字体
+plt.rcParams['font.sans-serif'] = ['KaiTi']
+# 解决保存图像是负号'-'显示为方块的问题
+plt.rcParams['axes.unicode_minus'] = False
 
-plt.rcParams['font.sans-serif'] = ['KaiTi'] # 指定默认字体
-plt.rcParams['axes.unicode_minus'] = False # 解决保存图像是负号'-'显示为方块的问题
 
 class LoginProcessor:
     def __init__(self, source, target):
@@ -124,6 +126,7 @@ class LoginProcessor:
         self.analysis_ip_userId()
         self.draw_filter("../login/login_ipaddr_filter.csv")
         self.draw_filter("../login/login_ipaddr_userid_filter.csv")
+
 
 if __name__ == '__main__':
     lp = LoginProcessor("../userId/userlogin_new.csv", "../login")

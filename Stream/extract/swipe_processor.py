@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
-import csv
 import pandas as pd
-from tqdm import tqdm
 
-class LoginProcessor:
+
+class SwipeProcessor:
     def __init__(self, source, target):
         self.source = source
         self.target = target
