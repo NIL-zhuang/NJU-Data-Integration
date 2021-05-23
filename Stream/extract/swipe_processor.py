@@ -80,7 +80,6 @@ class SwipeProcessor:
         filename = filename.replace(".csv", "_filter.csv")
         self.analysis(filename, analysis_query)
 
-
 if __name__ == '__main__':
     s = SwipeProcessor("../userId/itembuy_new.csv", "../swipe")
     queries = {
