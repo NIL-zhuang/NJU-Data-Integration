@@ -129,6 +129,7 @@ create table buy_data
    4. userId：将category的数据按照user_id进行排序的结果。
    5. login：找到的所有的撞库机器人，认为有问题的结果存放在_result为后缀的文件中
    6. grab：找到的所有的抢单机器人，认为有问题的结果存放在_result为后缀的文件中
+   7. swipe：找到所有的刷单机器人，认为有问题的结果存放在_result为后缀的文件中
    
 ## 4.2. 静态数据
 1. 数据清洗
