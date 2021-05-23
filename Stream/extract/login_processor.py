@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import csv
-import pandas as pd
 from tqdm import tqdm
 
 class LoginProcessor:
@@ -43,5 +42,5 @@ class LoginProcessor:
                 writer.writerow(data[key])
 
 if __name__ == '__main__':
-    lp = LoginProcessor("../login/userlogin.csv", "../login")
+    lp = LoginProcessor("../login/userlogin_new.csv", "../login")
     lp.run()

@@ -99,16 +99,17 @@ create table buy_data
    2. 根据请求类型将数据进行划分
    3. 根据SESSIONID、userId和ipaddr进行划分
 2. 机器人分析：补充：**用户在部分时间段上会出现恶意机器人行为，而并不是一直会有恶意机器人行为**
-   1. 撞库机器人：使用ipaddr进行分类，检查如下
+   1. 撞库机器人：使用ipaddr进行分类，检查如下，[详见](./Stream/extract/login_processor.py)
       1. 某个时间段多次尝试登陆不同用户
       2. 大量的登录错误，并且登录成功后操作少(和每个用户成功登录的中位数对比)
-   2. 抢单机器人：对userId进行划分，检查如下
+   2. 抢单机器人：对userId进行划分，检查如下，[详见](./Stream/extract/grab_processor.py)
       1. 购买时间是否集中在整点或半点
-      2. 检查秒杀的次数和成功的情况(和每个用户的成功的中位数比较)
-   3. 刷单机器人：对userId进行划分，检查如下
+      2. 检查秒杀的次数和成功的情况(目前适合整个系统的均值比较 TODO 和每个用户的成功的中位数比较)
+      3. 数据集位置：grab
+   3. 刷单机器人：对userId进行划分，检查如下，[详见](./Stream/extract/swipe_processor.py)
       1. 是否某一个时间段购买行为集中在同一商品上，或者同一个时间购买大量非cart的商品
       2. 其他特征：平均浏览购买时间等
-   4. 爬虫机器人：对userId进行划分，检查如下
+   4. 爬虫机器人：对userId进行划分，检查如下，[详见](./Stream/extract/spider_processor.py)
       1. 是否在某个时间段内大量顺序浏览单一或多个目录下的商品
       2. 检查浏览速度是不是远低于平均速度。
 3. 分析目标
@@ -127,6 +128,7 @@ create table buy_data
    3. sessionId：将category的数据按照session_id进行排序的结果。
    4. userId：将category的数据按照user_id进行排序的结果。
    5. login：将category中的/user/login的请求按照ipaddr进行排序的结果。
+   6. grab：找到的所有的抢单机器人，认为有问题的结果存放在_result为后缀的文件中
 
 ## 4.2. 静态数据
 1. 数据清洗
