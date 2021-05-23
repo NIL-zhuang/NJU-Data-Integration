@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.vscode
+data/*
 
 # C extensions
 *.so
@@ -135,3 +137,4 @@ Stream/category
 Stream/sessionId
 Stream/userId
 Stream/result
+Stream/login
