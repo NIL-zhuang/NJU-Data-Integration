@@ -1,6 +1,7 @@
 import pandas as pd
 import os
-import tqdm
+from tqdm import tqdm
+from collections import defaultdict
 from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori
 
@@ -23,7 +24,20 @@ def myApriori():
     return df
 
 
+def dataInit():
+    if os.path.exists(os.path.join(dataPath, "aprioriData.csv")):
+        return
+    df = pd.read_csv("data/static/static.csv")
+    user_category = defaultdict(set)
+    for idx, row in tqdm(df.iterrows(), total=df.shape[0], desc="category data generate"):
+        user_category[row['USER_ID']].add(row['CATEGORY_ID'])
+    with open(os.path.join(dataPath, "aprioriData.csv"), 'w+') as f:
+        for k, v in tqdm(user_category.items()):
+            f.write(' '.join(sorted(list(map(str, v))))+'\n')
+
+
 if __name__ == '__main__':
+    dataInit()
     loadDataSet()
     df = myApriori()
     frequent_itemsets = apriori(df, min_support=0.004, use_colnames=True)
