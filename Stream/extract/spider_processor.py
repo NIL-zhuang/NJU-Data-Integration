@@ -173,6 +173,11 @@ class SpiderProcessor:
                 writer.writerow(line)
 
     def sortFolder(self, folder):
+        """
+        排序所有的用户文件
+        :param folder:
+        :return:
+        """
         filenames = os.listdir(folder)
         for filename in tqdm(filenames):
             user_id = eval(filename.split(".")[0])
