@@ -41,16 +41,17 @@ class GrabProcessor:
         :param filename:
         :return:
         """
-        df = pd.read_csv(filename, encoding='utf-8', header=0)
+        df = pd.read_csv(os.path.join(self.target, filename), encoding='utf-8', header=0)
         result = df[df["successNumber"] > 0]
         filename = filename.replace(".csv", "_filter.csv")
         result.to_csv(os.path.join(self.target, filename), index=False, mode="w")
 
     def analysis(self, filename, query=["mean", "75%", "mean"]):
-        df = pd.read_csv(filename, encoding='utf-8', header=0)
+        df = pd.read_csv(os.path.join(self.target, filename), encoding='utf-8', header=0)
         df["success_rate"] = df["successNumber"] / df["secondKillNumber"]
         df["kill_rate"] = df["secondKillNumber"] / df["counts"]
         frame = df.describe()
+        print(frame)
         # 秒杀次数较少的先不考虑
         result = df[df["counts"] >= frame["counts"][query[0]]]
         frame = result.describe()
@@ -60,14 +61,6 @@ class GrabProcessor:
         result = result[result["kill_rate"] >= frame["kill_rate"][query[2]]]
         filename = filename.replace(".csv", "_result.csv")
         result.to_csv(os.path.join(self.target, filename), index=False, mode="w")
-
-    def analysis_user(self):
-        query = ["userId"]
-        self.group(query)
-        filename = os.path.join(self.target, "grab_" + "_".join(query).lower() + ".csv")
-        self.filter(filename)
-        filename = filename.replace(".csv", "_filter.csv")
-        self.analysis(filename, ["mean", "75%", "mean"])
 
     def near_time(self, number):
         """
@@ -88,7 +81,7 @@ class GrabProcessor:
         :param filename:
         :return:
         """
-        df = pd.read_csv(filename, encoding='utf-8', header=0)
+        df = pd.read_csv(os.path.join(self.target, filename), encoding='utf-8', header=0)
         df["TIME"] = df["TIME"].apply(self.near_time)
         gb = df.groupby(query)
         result = gb.size().to_frame(name="counts")
@@ -101,10 +94,18 @@ class GrabProcessor:
         filename = filename.replace(".csv", "_union.csv")
         result.to_csv(os.path.join(self.target, filename), index=False, mode="w")
 
+    def analysis_user(self):
+        query = ["userId"]
+        self.group(query)
+        filename = "grab_" + "_".join(query).lower() + ".csv"
+        self.filter(filename)
+        filename = filename.replace(".csv", "_filter.csv")
+        self.analysis(filename, ["mean", "75%", "mean"])
+
     def analysis_user_time(self, union=True):
         query = ["userId", "TIME"]
         self.group(query)
-        filename = os.path.join(self.target, "grab_" + "_".join(query).lower() + ".csv")
+        filename = "grab_" + "_".join(query).lower() + ".csv"
         if union:
             self.union_user_time(filename, query)
             filename = filename.replace(".csv", "_union.csv")
@@ -121,5 +122,5 @@ class GrabProcessor:
         self.analysis_user_time(False)
 
 if __name__ == '__main__':
-    g = GrabProcessor("../userId/itembuy_new.csv", "../grab")
+    g = GrabProcessor("../userId/itembuy_new.csv", "../result/grab")
     g.run()
