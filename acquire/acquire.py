@@ -15,7 +15,7 @@ consumer = KafkaConsumer(
 
 # 多个 consumer 可以重复消费相同的日志，每个 consumer 只会消费到它启动后产生的日志，不会拉到之前的余量
 bufferLen = 1000
-timeRange = 60  # 30min换一个文件
+timeRange = 60  # 60min换一个文件
 buffer = ['' for _ in range(bufferLen)]
 cur = 0  # 记录当前buffer指针
 disc = ''  # 移动盘盘符
