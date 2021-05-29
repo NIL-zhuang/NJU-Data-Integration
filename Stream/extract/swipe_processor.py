@@ -40,7 +40,6 @@ class SwipeProcessor:
         :return:
         """
         df = pd.read_csv(self.source, encoding='utf-8', header=0)
-        # df["TIME"] = df["TIME"].apply(self.near_time)
         # 过滤掉秒杀的部分
         df = df[df["isSecondKill"] == 0]
         gb = df.groupby(query)

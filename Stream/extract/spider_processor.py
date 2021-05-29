@@ -3,12 +3,16 @@ import os
 import csv
 import pandas as pd
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+
+# 指定默认字体
+plt.rcParams['font.sans-serif'] = ['KaiTi']
+# 解决保存图像是负号'-'显示为方块的问题
+plt.rcParams['axes.unicode_minus'] = False
 
 '''
 找到爬虫机器人
 '''
-
-
 class SpiderProcessor:
     def __init__(self, source, target):
         self.source = source
@@ -21,131 +25,151 @@ class SpiderProcessor:
         if not os.path.exists(os.path.join(target, "user")):
             os.mkdir(os.path.join(target, "user"))
 
-    def near_time(self, number):
-        """
-        调整到最近的一分钟
-        :param number:
-        :return:
-        """
-        n = number % 60
-        if (n > 30):
-            number = number - n + 60
-        else:
-            number -= n
-        return number
-
-    def group(self, query):
-        """
-        根据 query 进行 group by 后进行统计
-        :param filename: 绝对路径
-        :param query:
-        :return:
-        """
-        df = pd.read_csv(self.source, encoding='utf-8', header=0)
-        df["TIME"] = df["TIME"].apply(self.near_time)
-        gb = df.groupby(query)
-        result = gb.size().to_frame(name="counts").reset_index()
-        filename = "spider_" + "_".join(query).lower() + ".csv"
-        result.to_csv(os.path.join(self.target, filename), index=False, mode="w")
-
-    def filter(self, filename):
-        """
-        没有抢到过的用户被过滤掉
-        :param filename:
-        :return:
-        """
-        df = pd.read_csv(filename, encoding='utf-8', header=0)
-        result = df[df["counts"] > 1]
-        filename = filename.replace(".csv", "_filter.csv")
-        result.to_csv(os.path.join(self.target, filename), index=False, mode="w")
-
-    def analysis(self, filename, query=["mean"]):
-        df = pd.read_csv(filename, encoding='utf-8', header=0)
-        frame = df.describe()
-        if (type(query) == int):
-            condition = query
-        else:
-            condition = frame["counts"][query[0]]
-        result = df[df["counts"] >= condition]
-        filename = filename.replace(".csv", "_result.csv")
-        result.to_csv(os.path.join(self.target, filename), index=False, mode="w")
-
     def check_login(self):
         """
-        过滤到所有成功登录请求并物化
+        过滤得到所有成功登录请求并物化，持久化到userId_Ip.csv
         :return:
         """
-        df = pd.read_csv(self.source, encoding='utf-8', header=0)
+        df = pd.read_csv("../userId/userlogin_new.csv", encoding='utf-8', header=0)
         df = df[df["success"] == 1]
         df = df.sort_values(by="userId")
         df.to_csv(os.path.join(self.target, "userId_Ip.csv"), columns=["TIME", "IPADDR", "userId"], index=False,
                   mode="w")
 
-    def find_Ip(self, df, userId, now):
+    def check_User_Ip(self):
         """
-        :param df: userId_Ip 映射
-        :param userId: 查询的userId
-        :param now: 查询的当前时刻
+        检查所有的IP地址，得到每一个IP地址对应的用户数量关系的分布情况
+        选择出高于10个的IP地址，持久化到user_Ip_check.csv中
         :return:
         """
-        df = df[df["userId"] == userId]
-        df = df[df["TIME"] <= now]
-        if len(df) >= 1:
-            return df.tail(1)["IPADDR"].values[0]
-        else:
-            return "0.0.0.0"
+        df = pd.read_csv("../result/spider/userId_Ip.csv", encoding='utf-8', header=0)
+        gb = df.groupby(["IPADDR"]).userId.nunique()
+        result = gb.to_frame(name="counts").reset_index()
+        fig, axes = plt.subplots(2, 3, figsize=(12, 12))
+        fig.suptitle("IP地址对应用户关系分布")
 
-    def transform(self):
+        ax1 = axes[0, 0]
+        ax1.boxplot(result["counts"], notch=True, sym='*', labels=["counts(total)"])
+        ax1.set_title("整体IP地址对应用户关系分布")
+
+        resultHigh1 = result[result["counts"] < 10]
+        ax2 = axes[0, 1]
+        ax2.boxplot(resultHigh1["counts"], notch=True, sym='*', labels=["counts(<10)"])
+        ax2.set_title("整体IP地址登录次数小于10的用户的分布")
+
+        resultHigh10 = result[result["counts"] > 10]
+        print(resultHigh10.describe())
+        ax3 = axes[0, 2]
+        ax3.boxplot(resultHigh10["counts"], notch=True, sym='*', labels=["counts(>10)"])
+        ax3.set_title("整体IP地址登录次数高于10的用户的分布")
+        resultHigh10 = resultHigh10.sort_values(["counts"])
+        resultHigh10.to_csv("../result/spider/Ip_check.csv", index=False, mode="w")
+        plt.show()
+
+    def check_all(self):
         """
-        将 getDetail 转换为包含IP的部分，并清理列 TODO 优化效率
+        检查所有的可疑Ip地址
         :return:
         """
-        userIp = {}
-        userIp_mapper = {}
-        multi_userId = []
-        mapper = pd.read_csv(os.path.join(self.target, "userId_Ip.csv"), encoding='utf-8', header=0)
-        for row in tqdm(mapper.itertuples()):
-            row_time = getattr(row, 'TIME')
-            ip_addr = getattr(row, 'IPADDR')
-            user_id = getattr(row, "userId")
-            if user_id not in userIp:
-                userIp[user_id] = {}
-            if ip_addr not in userIp[user_id]:
-                userIp[user_id][ip_addr] = []
-            userIp[user_id][ip_addr].append(row_time)
-        for user_id in userIp:
-            if (len(userIp[user_id]) > 1):
-                multi_userId.append(user_id)
-            else:
-                userIp_mapper[user_id] = list(userIp[user_id].keys())[0]
-
-        with open(os.path.join(self.target, "itemgetDetail_transform_ip.csv"), mode="w", encoding="utf-8",
-                  newline="") as f1:
-            writer = csv.writer(f1)
-            count = 1000000
-            n = 0
-            with open(os.path.join(self.target, "itemgetDetail_transform.csv"), mode="r", encoding="utf-8") as f2:
-                reader = csv.reader(f2)
-                first = True
-                for line in tqdm(reader):
-                    if first:
-                        line.append("IPADDR")
-                        writer.writerow(line)
-                        first = False
-                        continue
-                    if (line[2] in multi_userId):
-                        ip = self.find_Ip(mapper, eval(line[2]), eval(line[1]))
+        source = pd.read_csv(os.path.join(self.target, "userId_Ip.csv"), encoding='utf-8', header=0)
+        df = pd.read_csv(os.path.join(self.target, "Ip_check.csv"), encoding='utf-8', header=0)
+        for ip in tqdm(df["IPADDR"]):
+            print("Checking", ip)
+            # 得到所有对应的userId
+            ip_result = []
+            userIds = source[source["IPADDR"] == ip]["userId"]
+            for userId in userIds:
+                ips = source[source["userId"] == userId]
+                if(not os.path.exists(os.path.join(self.target, "user", str(userId) + ".csv"))):
+                    continue
+                user_data = pd.read_csv(
+                    os.path.join(self.target, "user", str(userId) + ".csv")
+                    , encoding='utf-8', header=0)
+                ips.sort_values(["TIME"])
+                now = []
+                times = []
+                for row in ips.itertuples():
+                    TIME = getattr(row, 'TIME')
+                    IPADDR = getattr(row, 'IPADDR')
+                    if(IPADDR == ip):
+                        if(len(now) == 0):
+                            now.append(TIME)
+                        else:
+                            continue
                     else:
-                        try:
-                            ip = userIp_mapper[eval(line[2])]
-                        except:
-                            ip = "0.0.0.0"
+                        if(len(now) == 1):
+                            now.append(TIME)
+                            times.append(now)
+                            now = []
+                        continue
+                if(len(now) != 0):
+                    times.append(now)
+                for my_time in times:
+                    # 处理每一个时间段
+                    if(len(my_time) == 1):
+                        temp = user_data[user_data["TIME"] >= my_time[0]]
+                    elif(len(my_time) == 2):
+                        temp = user_data[user_data["TIME"] >= my_time[0]]
+                        temp = temp[temp["TIME"] < my_time[1]]
+                    else:
+                        print("Error!")
+                        print(my_time)
+                    ip_result.append(temp)
+            ip_pd = pd.concat(ip_result)
+            ip_pd.to_csv(os.path.join(self.target, "ip", str(ip) + ".csv"), index=False, mode="w")
 
-                    line.append(ip)
-                    writer.writerow(line)
-                    n += 1
-                    if n > count:
-                        break
+    def union(self):
+        """
+        将/Ip文件夹所有的文件合并成检查的结果
+        :return:
+        """
+        target = os.path.join(self.target, "ip")
+        filenames = os.listdir(target)
+        source = []
+        for filename in filenames:
+            df = pd.read_csv(os.path.join(self.target, "ip", filename), encoding='utf-8', header=0)
+            # df.insert(df.shape[1], "IPADDR", filename[:-4])
+            source.append(df)
+        result = pd.concat(source)
+        print(type(result))
+        result.sort_values(["TIME"], inplace=True)
+        result.to_csv(os.path.join(self.target, "union_ip.csv"), index=False, mode="w")
+
+    def final_check(self):
+        """
+        检查最终的union_Ip文件
+        :return:
+        """
+        df = pd.read_csv(os.path.join(self.target, "union_ip.csv"), encoding='utf-8', header=0)
+        gb = df.groupby(["IPADDR", "categoryId"])
+        result = gb.size().to_frame(name="counts").reset_index()
+        print(result.describe())
+        result.to_csv(os.path.join(self.target, "union_ip_group.csv")
+                      , index=False, mode="w")
+
+    def draw_filter(self, filename):
+        df = pd.read_csv(os.path.join(self.target, filename), encoding='utf-8', header=0)
+
+        fig, axes = plt.subplots(2, 3, figsize=(12, 12))
+        fig.suptitle("Ip地址查看同类商品分析图")
+
+        ax1 = axes[0, 0]
+        ax1.boxplot(df["counts"], notch=True, sym='*', labels=["counts(total)"])
+        ax1.set_title("图-1 整体Ip地址查看同类商品次数分布情况")
+
+        ax2 = axes[0, 1]
+        normal = df[df["counts"] <= 150]
+        ax2.boxplot(normal["counts"], notch=True, sym='*', labels=["counts(<= 150)"])
+        ax2.set_title("图-2 低查询(<=150)时分布情况")
+
+        ax3 = axes[0, 2]
+        error = df[df["counts"] > 150]
+        ax3.boxplot(error["counts"], notch=True, sym='*', labels=["counts(> 150)"])
+        ax3.set_title("图-3 高查询(>150)时分布情况")
+
+        plt.show()
+        error.sort_values(["counts"])
+        error.to_csv(os.path.join(self.target, "error_ip.csv"), index=False, mode="w")
 
     def mySplit(self):
         """
@@ -172,48 +196,9 @@ class SpiderProcessor:
                     writer.writerow(title)
                 writer.writerow(line)
 
-    def sortFolder(self, folder):
-        """
-        排序所有的用户文件
-        :param folder:
-        :return:
-        """
-        filenames = os.listdir(folder)
-        for filename in tqdm(filenames):
-            user_id = eval(filename.split(".")[0])
-            self.sortOne(user_id)
-
-    def sortOne(self, user_id):
-        """
-        排序一个用户文件
-        :param user_id:
-        :return:
-        """
-        df = pd.read_csv(os.path.join(self.target, "user", str(user_id) + ".csv"), encoding='utf-8', header=0)
-        df = df.sort_values("TIME")
-        df.to_csv(os.path.join(self.target, "user", str(user_id) + ".csv"), index=False, mode="w")
-
-    def run(self, query, analysis_query):
-        """
-        :return:
-        """
-        print("Group")
-        self.group(query)
-        filename = os.path.join(self.target, "spider_" + "_".join(query).lower() + ".csv")
-        print("filter")
-        self.filter(filename)
-        filename = filename.replace(".csv", "_filter.csv")
-        print("analysis")
-        self.analysis(filename, analysis_query)
-
 
 if __name__ == '__main__':
     s = SpiderProcessor("../category/itemgetDetail_new.csv", "../result/spider")
-    # queries = {
-    #     "[\"userId\", \"TIME\", \"itemId\", \"categoryId\"]": ["mean"],
-    # }
-    # for query in tqdm(queries):
-    #     s.run(eval(query), queries[query])
-
-    # s.check_login()
-    s.sortFolder("../result/spider/user")
+    # s.union()
+    # s.final_check()
+    s.draw_filter("union_ip_group.csv")
