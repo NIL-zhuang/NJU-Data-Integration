@@ -40,6 +40,6 @@ if __name__ == '__main__':
     dataInit()
     loadDataSet()
     df = myApriori()
-    frequent_itemsets = apriori(df, min_support=0.004, use_colnames=True)
+    frequent_itemsets = apriori(df, min_support=0.0035, use_colnames=True)
     frequent_itemsets['length'] = frequent_itemsets['itemsets'].apply(lambda x: len(x))
     print(frequent_itemsets[(frequent_itemsets['length'] >= 2)])
