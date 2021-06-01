@@ -7,8 +7,6 @@ from tqdm import tqdm
 from sklearn.manifold import TSNE
 import os
 import csv
-import heapq
-from random import random
 
 
 TOP25 = 5
@@ -18,15 +16,16 @@ kmeansPath = 'data/static/kmeans.csv'
 
 def getDataset():
     # 这是设置取样规则的，如果要重新取样记得删掉data/static/kmeans.csv文件
-    if not os.path.exists(kmeansPath):
+    # if not os.path.exists(kmeansPath):
+    if True:
         X = []
         df = pd.read_csv(srcPath)
         for idx, row in tqdm(df.iterrows(), total=df.shape[0], desc="Dataset"):
-            if row['TOTAL'] < 5:
+            if row['TOTAL'] < 10:
                 # 取样规则在这里
                 continue
             data = [row['DAWN'], row['MORNING'], row['AFTERNOON'], row['NIGHT']]
-            X.append(list(map(lambda x: x/row['TOTAL'], data)))
+            X.append(list(map(lambda x: round(x/row['TOTAL'], 2), data)))
         with open(os.path.join('data/static', 'kmeans.csv'), 'w+') as f:
             writer = csv.writer(f)
             writer.writerow(['DAWN', 'MORNING', 'AFTERNOON', 'NIGHT'])
@@ -70,6 +69,7 @@ def kmeans(df):
     print(r2)
     r = pd.concat([df, pd.Series(estimator.labels_, index=df.index)], axis=1)  # 详细
     r.columns = list(df.columns) + ['TYPE']  # 重命名表头
+    r.to_csv('data/static/kmeans_res.csv')
     print(r.head())
     print("finish data concat")
     tsne = TSNE(n_components=2)
